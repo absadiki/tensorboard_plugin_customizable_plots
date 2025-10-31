@@ -42,6 +42,14 @@ var generalConfigAttributes = {
         ].join(' ')
     },
 
+     smoothing: {
+        valType: 'number',
+        min: 0,
+        max: 0.99,
+        dflt: 0,
+        description: 'Smoothing factor for exponential moving average (0 = no smoothing, 0.99 = maximum smoothing)'
+    },
+
 };
 
 var dflGeneralConfigAttributes = {};
