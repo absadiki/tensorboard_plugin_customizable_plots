@@ -141,6 +141,30 @@ const isEmpty = obj => {
   return true;
 };
 
+/**
+ * Apply exponential moving average smoothing to data
+ * @param {Array} data - Array of {x, y} points
+ * @param {number} weight - Smoothing weight (0-0.99), 0 = no smoothing, 0.99 = maximum smoothing
+ * @returns {Array} - Smoothed data points
+ */
+function smoothData(data, weight) {
+  if (weight === 0 || !data || data.length === 0) {
+    return data;
+  }
+  let smoothed = [];
+  let lastSmoothed = data[0].y;
+  for (let i = 0; i < data.length; i++) {
+    let point = data[i];
+    let smoothedY = lastSmoothed * weight + point.y * (1 - weight);
+    smoothed.push({
+      x: point.x,
+      y: smoothedY
+    });
+    lastSmoothed = smoothedY;
+  }
+  return smoothed;
+}
+
 /**========================================================================================================*/
 
 /**
@@ -1407,6 +1431,17 @@ function App() {
           ...rawData[tag][run],
           ...runsConfig[run]
         };
+        // Apply smoothing if enabled
+        if (generalConfig.smoothing && generalConfig.smoothing > 0) {
+          // Assuming trace has x and y arrays
+          let dataPoints = trace.x.map((x, i) => ({
+            x: x,
+            y: trace.y[i]
+          }));
+          let smoothedPoints = smoothData(dataPoints, generalConfig.smoothing);
+          trace.x = smoothedPoints.map(p => p.x);
+          trace.y = smoothedPoints.map(p => p.y);
+        }
         traces.push(trace);
       }
       d[tag] = traces;
@@ -1477,7 +1512,7 @@ function App() {
     let processedData = processData();
     setData(processedData);
     localStorage.setItem('deactivatedRuns', JSON.stringify(deactivatedRuns));
-  }, [rawData, runsConfig, deactivatedRuns, filteredRuns]);
+  }, [rawData, runsConfig, deactivatedRuns, filteredRuns, generalConfig.smoothing]);
   React.useEffect(() => {
     setRevision(revision + 1);
     // save config to localStorage for reuse
